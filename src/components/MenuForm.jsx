@@ -1,0 +1,154 @@
+import React, { useState, useEffect } from 'react';
+import { supabase } from '../supabaseClient';
+
+const MenuForm = ({ itemToEdit, onSave, onCancel }) => {
+    const [categories, setCategories] = useState([]);
+    const [formData, setFormData] = useState({
+        name_en: '',
+        name_local: '',
+        name_om: '',
+        name_so: '',
+        price: '',
+        category: '',
+        image_url: ''
+    });
+
+    useEffect(() => {
+        const fetchCategories = async () => {
+            const { data } = await supabase.from('categories').select('name').order('display_order');
+            if (data) {
+                setCategories(data.map(c => c.name));
+                if (!itemToEdit && data.length > 0) {
+                    setFormData(prev => ({ ...prev, category: data[0].name }));
+                }
+            }
+        };
+        fetchCategories();
+    }, [itemToEdit]);
+
+    useEffect(() => {
+        if (itemToEdit) {
+            setFormData({
+                name_en: itemToEdit.name_en,
+                name_local: itemToEdit.name_local,
+                name_om: itemToEdit.name_om || '',
+                name_so: itemToEdit.name_so || '',
+                price: itemToEdit.price,
+                category: itemToEdit.category,
+                image_url: itemToEdit.image_url || ''
+            });
+        }
+    }, [itemToEdit]);
+
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        onSave(formData);
+    };
+
+    return (
+        <div className="glass-panel" style={{ padding: '2rem', marginBottom: '2rem' }}>
+            <h2 style={{ marginBottom: '1.5rem' }}>{itemToEdit ? 'Edit Item' : 'Add New Item'}</h2>
+            <form onSubmit={handleSubmit}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                    <div className="form-group">
+                        <label>Name (English)</label>
+                        <input
+                            name="name_en"
+                            value={formData.name_en}
+                            onChange={handleChange}
+                            className="form-input"
+                            required
+                        />
+                    </div>
+                    <div className="form-group">
+                        <label>Name (Amharic/Local)</label>
+                        <input
+                            name="name_local"
+                            value={formData.name_local}
+                            onChange={handleChange}
+                            className="form-input"
+                            required
+                        />
+                    </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                    <div className="form-group">
+                        <label>Name (Afan Oromo)</label>
+                        <input
+                            name="name_om"
+                            value={formData.name_om}
+                            onChange={handleChange}
+                            className="form-input"
+                            placeholder="Optional"
+                        />
+                    </div>
+                    <div className="form-group">
+                        <label>Name (Somali)</label>
+                        <input
+                            name="name_so"
+                            value={formData.name_so}
+                            onChange={handleChange}
+                            className="form-input"
+                            placeholder="Optional"
+                        />
+                    </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                    <div className="form-group">
+                        <label>Price (ETB)</label>
+                        <input
+                            name="price"
+                            type="number"
+                            value={formData.price}
+                            onChange={handleChange}
+                            className="form-input"
+                            required
+                        />
+                    </div>
+                    <div className="form-group">
+                        <label>Category</label>
+                        <select
+                            name="category"
+                            value={formData.category}
+                            onChange={handleChange}
+                            className="form-input"
+                        >
+                            {categories.map(cat => (
+                                <option key={cat} value={cat}>{cat}</option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
+
+                <div className="form-group">
+                    <label>Image URL (Optional)</label>
+                    <input
+                        name="image_url"
+                        value={formData.image_url}
+                        onChange={handleChange}
+                        className="form-input"
+                        placeholder="https://..."
+                    />
+                </div>
+
+                <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+                    <button type="submit" className="btn">
+                        {itemToEdit ? 'Update Item' : 'Add Item'}
+                    </button>
+                    <button type="button" onClick={onCancel} className="btn btn-secondary">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    );
+};
+
+export default MenuForm;
