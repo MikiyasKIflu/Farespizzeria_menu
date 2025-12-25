@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../supabaseClient';
+import { databases, DATABASE_ID, COLLECTION_CATEGORIES_ID } from '../lib/appwrite';
+import { Query } from 'appwrite';
 
 const MenuForm = ({ itemToEdit, onSave, onCancel }) => {
     const [categories, setCategories] = useState([]);
@@ -10,17 +11,24 @@ const MenuForm = ({ itemToEdit, onSave, onCancel }) => {
         name_so: '',
         price: '',
         category: '',
+        is_available: true,
         image_url: ''
     });
 
     useEffect(() => {
         const fetchCategories = async () => {
-            const { data } = await supabase.from('categories').select('name').order('display_order');
-            if (data) {
-                setCategories(data.map(c => c.name));
-                if (!itemToEdit && data.length > 0) {
-                    setFormData(prev => ({ ...prev, category: data[0].name }));
+            try {
+                const res = await databases.listDocuments(DATABASE_ID, COLLECTION_CATEGORIES_ID, [
+                    Query.orderAsc('display_order'),
+                    Query.limit(100)
+                ]);
+                const cats = res.documents.map(c => c.name);
+                setCategories(cats);
+                if (!itemToEdit && cats.length > 0) {
+                    setFormData(prev => ({ ...prev, category: cats[0] }));
                 }
+            } catch (error) {
+                console.error('Error fetching categories:', error);
             }
         };
         fetchCategories();
@@ -35,6 +43,7 @@ const MenuForm = ({ itemToEdit, onSave, onCancel }) => {
                 name_so: itemToEdit.name_so || '',
                 price: itemToEdit.price,
                 category: itemToEdit.category,
+                is_available: itemToEdit.is_available !== undefined ? itemToEdit.is_available : true,
                 image_url: itemToEdit.image_url || ''
             });
         }
@@ -47,7 +56,12 @@ const MenuForm = ({ itemToEdit, onSave, onCancel }) => {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        onSave(formData);
+        // Ensure price is a number for Appwrite
+        const submissionData = {
+            ...formData,
+            price: parseFloat(formData.price)
+        };
+        onSave(submissionData);
     };
 
     return (

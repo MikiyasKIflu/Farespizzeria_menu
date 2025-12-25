@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { supabase } from '../supabaseClient';
+import { databases, DATABASE_ID, COLLECTION_ITEMS_ID, COLLECTION_CATEGORIES_ID, isAppwriteConfigured } from '../lib/appwrite';
+import { Query } from 'appwrite';
 import MenuItem from '../components/MenuItem';
 import Navbar from '../components/Navbar';
 import Sidebar from '../components/Sidebar';
@@ -29,7 +30,7 @@ const PublicMenu = () => {
             offset: 50
         });
 
-        if (!supabase) {
+        if (!isAppwriteConfigured) {
             setLoading(false);
             return;
         }
@@ -37,18 +38,22 @@ const PublicMenu = () => {
     }, []);
 
     const fetchData = async () => {
-        if (!supabase) return;
+        if (!isAppwriteConfigured) return;
         try {
             const [itemsRes, catsRes] = await Promise.all([
-                supabase.from('menu_items').select('*').order('category').order('name_en'),
-                supabase.from('categories').select('*').order('display_order')
+                databases.listDocuments(DATABASE_ID, COLLECTION_ITEMS_ID, [
+                    Query.orderAsc('category'),
+                    Query.orderAsc('name_en'),
+                    Query.limit(100)
+                ]),
+                databases.listDocuments(DATABASE_ID, COLLECTION_CATEGORIES_ID, [
+                    Query.orderAsc('display_order'),
+                    Query.limit(100)
+                ])
             ]);
 
-            if (itemsRes.error) throw itemsRes.error;
-            if (catsRes.error) throw catsRes.error;
-
-            setMenuItems(itemsRes.data);
-            setCategoriesList(catsRes.data);
+            setMenuItems(itemsRes.documents);
+            setCategoriesList(catsRes.documents);
         } catch (error) {
             console.error('Error fetching data:', error);
         } finally {
@@ -187,55 +192,75 @@ const PublicMenu = () => {
                     }}
                     className="hide-scrollbar"
                 >
-                    {categories.map((cat) => (
-                        <button
-                            key={cat.id}
-                            onClick={() => setCategoryFilter(cat.id)}
-                            style={{
-                                display: 'flex',
-                                flexDirection: 'column',
-                                alignItems: 'center',
-                                gap: '0.5rem',
-                                background: 'none',
-                                border: 'none',
-                                opacity: categoryFilter === cat.id ? 1 : 0.6,
-                                transition: 'opacity 0.3s',
-                                minWidth: '80px'
-                            }}
-                        >
-                            <div style={{
-                                width: '60px',
-                                height: '60px',
-                                borderRadius: '15px',
-                                background: categoryFilter === cat.id ? 'var(--primary)' : '#ccc',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                color: 'white',
-                                boxShadow: categoryFilter === cat.id ? '0 4px 10px rgba(246, 7, 66, 0.3)' : 'none'
-                            }}>
-                                {/* Placeholder icons or first letter */}
-                                <span style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{cat.label.charAt(0)}</span>
-                            </div>
-                            <span style={{
-                                fontSize: '0.85rem',
-                                fontWeight: '600',
-                                color: categoryFilter === cat.id ? 'var(--primary)' : 'var(--text-main)',
-                                whiteSpace: 'nowrap'
-                            }}>
-                                {cat.label}
-                            </span>
-                        </button>
-                    ))}
+                    {categories.map((cat) => {
+                        // Find the actual category data to get image_url
+                        const categoryData = categoriesList.find(c => c.name === cat.id);
+                        const hasImage = categoryData?.image_url;
+
+                        return (
+                            <button
+                                key={cat.id}
+                                onClick={() => setCategoryFilter(cat.id)}
+                                style={{
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    gap: '0.5rem',
+                                    background: 'none',
+                                    border: 'none',
+                                    opacity: categoryFilter === cat.id ? 1 : 0.6,
+                                    transition: 'opacity 0.3s',
+                                    minWidth: '80px',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                <div style={{
+                                    width: '60px',
+                                    height: '60px',
+                                    borderRadius: '15px',
+                                    background: hasImage ? 'transparent' : (categoryFilter === cat.id ? 'var(--primary)' : '#ccc'),
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    color: 'white',
+                                    boxShadow: categoryFilter === cat.id ? '0 4px 10px rgba(246, 7, 66, 0.3)' : 'none',
+                                    overflow: 'hidden'
+                                }}>
+                                    {hasImage ? (
+                                        <img
+                                            src={categoryData.image_url}
+                                            alt={cat.label}
+                                            style={{
+                                                width: '100%',
+                                                height: '100%',
+                                                objectFit: 'cover',
+                                                borderRadius: '15px'
+                                            }}
+                                        />
+                                    ) : (
+                                        <span style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{cat.label.charAt(0)}</span>
+                                    )}
+                                </div>
+                                <span style={{
+                                    fontSize: '0.85rem',
+                                    fontWeight: '600',
+                                    color: categoryFilter === cat.id ? 'var(--primary)' : 'var(--text-main)',
+                                    whiteSpace: 'nowrap'
+                                }}>
+                                    {cat.label}
+                                </span>
+                            </button>
+                        );
+                    })}
                 </div>
             </div>
 
-            {(!supabase) ? (
+            {(!isAppwriteConfigured) ? (
                 <div style={{ textAlign: 'center', padding: '4rem', color: '#e74c3c' }}>
                     <h2 style={{ marginBottom: '1rem' }}>Configuration Error</h2>
-                    <p>Supabase connection is missing.</p>
+                    <p>Appwrite connection is missing.</p>
                     <p style={{ fontSize: '0.9rem', marginTop: '1rem', color: 'var(--text-muted)' }}>
-                        Please create a <code>.env</code> file with your <code>VITE_SUPABASE_URL</code> and <code>VITE_SUPABASE_KEY</code>.
+                        Please create a <code>.env</code> file with your <code>VITE_APPWRITE_ENDPOINT</code>, <code>VITE_APPWRITE_PROJECT_ID</code>, and <code>VITE_APPWRITE_DATABASE_ID</code>.
                     </p>
                 </div>
             ) : loading ? (
@@ -269,7 +294,7 @@ const PublicMenu = () => {
                                     justifyContent: 'center'
                                 }}>
                                     {data.items.map((item, i) => (
-                                        <div key={item.id} data-aos="fade-up" data-aos-delay={i * 50}>
+                                        <div key={item.$id} data-aos="fade-up" data-aos-delay={i * 50}>
                                             <MenuItem item={item} language={language} />
                                         </div>
                                     ))}

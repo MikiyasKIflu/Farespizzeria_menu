@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
-import { supabase } from '../supabaseClient';
+import { account, isAppwriteConfigured } from '../lib/appwrite';
 
 const AuthContext = createContext({});
 
@@ -10,31 +10,45 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        if (!supabase) {
+        if (!isAppwriteConfigured) {
             setLoading(false);
             return;
         }
 
-        // Check active sessions and sets the user
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            setUser(session?.user ?? null);
-            setLoading(false);
-        });
-
-        // Listen for changes on auth state (logged in, signed out, etc.)
-        const { data: { subscription: listener } } = supabase.auth.onAuthStateChange((_event, session) => {
-            setUser(session?.user ?? null);
-            setLoading(false);
-        });
-
-        return () => {
-            listener?.unsubscribe();
-        };
+        // Check active session
+        checkUser();
     }, []);
 
+    const checkUser = async () => {
+        try {
+            const session = await account.get();
+            setUser(session);
+        } catch (error) {
+            setUser(null);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const value = {
-        signIn: (data) => supabase?.auth.signInWithPassword(data),
-        signOut: () => supabase?.auth.signOut(),
+        signIn: async ({ email, password }) => {
+            try {
+                await account.createEmailPasswordSession(email, password);
+                await checkUser();
+                return { data: { user: await account.get() }, error: null };
+            } catch (error) {
+                return { data: { user: null }, error };
+            }
+        },
+        signOut: async () => {
+            try {
+                await account.deleteSession('current');
+                setUser(null);
+                return { error: null };
+            } catch (error) {
+                return { error };
+            }
+        },
         user,
     };
 

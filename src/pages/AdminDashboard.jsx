@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { supabase } from '../supabaseClient';
+import { databases, DATABASE_ID, COLLECTION_ITEMS_ID, COLLECTION_CATEGORIES_ID, isAppwriteConfigured } from '../lib/appwrite';
+import { ID, Query } from 'appwrite';
 import Navbar from '../components/Navbar';
 import MenuForm from '../components/MenuForm';
 import { Edit, Trash2, Plus, Eye, EyeOff, ArrowLeft } from 'lucide-react';
@@ -12,10 +13,13 @@ const AdminDashboard = () => {
     const [isEditing, setIsEditing] = useState(false);
     const [itemToEdit, setItemToEdit] = useState(null);
     const [newCategoryName, setNewCategoryName] = useState('');
+    const [newCategoryImage, setNewCategoryImage] = useState('');
     const [isManagingCategories, setIsManagingCategories] = useState(false);
 
     useEffect(() => {
-        fetchAll();
+        if (isAppwriteConfigured) {
+            fetchAll();
+        }
     }, []);
 
     const fetchAll = async () => {
@@ -25,17 +29,30 @@ const AdminDashboard = () => {
     };
 
     const fetchCategories = async () => {
-        const { data, error } = await supabase.from('categories').select('*').order('display_order');
-        if (data) setCategories(data);
+        try {
+            const res = await databases.listDocuments(DATABASE_ID, COLLECTION_CATEGORIES_ID, [
+                Query.orderAsc('display_order'),
+                Query.limit(100)
+            ]);
+            setCategories(res.documents);
+        } catch (error) {
+            console.error('Error fetching categories:', error);
+        }
     };
 
     const handleAddCategory = async () => {
         if (!newCategoryName) return;
-        const { error } = await supabase.from('categories').insert([{ name: newCategoryName, display_order: categories.length + 1 }]);
-        if (error) alert(error.message);
-        else {
+        try {
+            await databases.createDocument(DATABASE_ID, COLLECTION_CATEGORIES_ID, ID.unique(), {
+                name: newCategoryName,
+                image_url: newCategoryImage || '',
+                display_order: categories.length + 1
+            });
             setNewCategoryName('');
+            setNewCategoryImage('');
             fetchCategories();
+        } catch (error) {
+            alert(error.message);
         }
     };
 
@@ -45,21 +62,22 @@ const AdminDashboard = () => {
             alert('Cannot delete category that is currently in use by menu items.');
             return;
         }
-        if (!window.confirm('Are you sure you want to delete this category?')) return;
-        const { error } = await supabase.from('categories').delete().eq('id', id);
-        if (error) alert(error.message);
-        else fetchCategories();
+
+        try {
+            await databases.deleteDocument(DATABASE_ID, COLLECTION_CATEGORIES_ID, id);
+            fetchCategories();
+        } catch (error) {
+            alert(error.message);
+        }
     };
 
     const fetchMenuItems = async () => {
         try {
-            const { data, error } = await supabase
-                .from('menu_items')
-                .select('*')
-                .order('created_at', { ascending: false });
-
-            if (error) throw error;
-            setMenuItems(data);
+            const res = await databases.listDocuments(DATABASE_ID, COLLECTION_ITEMS_ID, [
+                Query.orderDesc('$createdAt'),
+                Query.limit(100)
+            ]);
+            setMenuItems(res.documents);
         } catch (error) {
             console.error('Error fetching menu:', error);
             alert('Error loading menu items');
@@ -72,17 +90,10 @@ const AdminDashboard = () => {
         try {
             if (itemToEdit) {
                 // Update
-                const { error } = await supabase
-                    .from('menu_items')
-                    .update(itemData)
-                    .eq('id', itemToEdit.id);
-                if (error) throw error;
+                await databases.updateDocument(DATABASE_ID, COLLECTION_ITEMS_ID, itemToEdit.$id, itemData);
             } else {
                 // Create
-                const { error } = await supabase
-                    .from('menu_items')
-                    .insert([itemData]);
-                if (error) throw error;
+                await databases.createDocument(DATABASE_ID, COLLECTION_ITEMS_ID, ID.unique(), itemData);
             }
 
             setIsEditing(false);
@@ -95,30 +106,23 @@ const AdminDashboard = () => {
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm('Are you sure you want to delete this item?')) return;
+        console.log('Deleting item with ID:', id);
 
         try {
-            const { error } = await supabase
-                .from('menu_items')
-                .delete()
-                .eq('id', id);
-
-            if (error) throw error;
-            fetchMenuItems();
+            await databases.deleteDocument(DATABASE_ID, COLLECTION_ITEMS_ID, id);
+            console.log('Delete successful!');
+            await fetchMenuItems();
         } catch (error) {
             console.error('Error deleting item:', error);
-            alert('Error deleting item');
+            alert('Error deleting item: ' + (error.message || 'Unknown error'));
         }
     };
 
     const toggleAvailability = async (id, currentStatus) => {
         try {
-            const { error } = await supabase
-                .from('menu_items')
-                .update({ is_available: !currentStatus })
-                .eq('id', id);
-
-            if (error) throw error;
+            await databases.updateDocument(DATABASE_ID, COLLECTION_ITEMS_ID, id, {
+                is_available: !currentStatus
+            });
             fetchMenuItems();
         } catch (error) {
             console.error('Error updating status:', error);
@@ -155,18 +159,24 @@ const AdminDashboard = () => {
             {isManagingCategories && (
                 <div className="glass-panel" style={{ padding: '2rem', marginBottom: '2rem', border: '2px solid var(--primary)' }}>
                     <h3>Manage Categories</h3>
-                    <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem', marginBottom: '1.5rem' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem', marginBottom: '1.5rem' }}>
                         <input
                             className="form-input"
-                            placeholder="New category name..."
+                            placeholder="Category name..."
                             value={newCategoryName}
                             onChange={(e) => setNewCategoryName(e.target.value)}
                         />
-                        <button onClick={handleAddCategory} className="btn" style={{ width: 'auto' }}>Add</button>
+                        <input
+                            className="form-input"
+                            placeholder="Image URL (optional)..."
+                            value={newCategoryImage}
+                            onChange={(e) => setNewCategoryImage(e.target.value)}
+                        />
+                        <button onClick={handleAddCategory} className="btn" style={{ width: 'auto' }}>Add Category</button>
                     </div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                         {categories.map(cat => (
-                            <div key={cat.id} style={{
+                            <div key={cat.$id} style={{
                                 background: 'var(--secondary)',
                                 padding: '0.5rem 1rem',
                                 borderRadius: '20px',
@@ -177,7 +187,7 @@ const AdminDashboard = () => {
                             }}>
                                 <span>{cat.name}</span>
                                 <button
-                                    onClick={() => handleDeleteCategory(cat.id, cat.name)}
+                                    onClick={() => handleDeleteCategory(cat.$id, cat.name)}
                                     style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', padding: 0 }}
                                 >
                                     <Trash2 size={14} />
@@ -209,7 +219,7 @@ const AdminDashboard = () => {
                     </thead>
                     <tbody>
                         {menuItems.map(item => (
-                            <tr key={item.id} style={{ borderBottom: '1px solid #e0e0e0' }}>
+                            <tr key={item.$id} style={{ borderBottom: '1px solid #e0e0e0' }}>
                                 <td data-label="Name" style={{ padding: '1rem' }}>
                                     <div style={{ fontWeight: 'bold' }}>{item.name_en}</div>
                                     <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>{item.name_local}</div>
@@ -218,7 +228,7 @@ const AdminDashboard = () => {
                                 <td data-label="Price" style={{ padding: '1rem' }}>{item.price} ETB</td>
                                 <td data-label="Status" style={{ padding: '1rem' }}>
                                     <button
-                                        onClick={() => toggleAvailability(item.id, item.is_available)}
+                                        onClick={() => toggleAvailability(item.$id, item.is_available)}
                                         style={{
                                             background: 'none',
                                             border: 'none',
@@ -243,7 +253,7 @@ const AdminDashboard = () => {
                                             <Edit size={16} />
                                         </button>
                                         <button
-                                            onClick={() => handleDelete(item.id)}
+                                            onClick={() => handleDelete(item.$id)}
                                             className="btn btn-danger"
                                             style={{ padding: '0.5rem', width: 'auto' }}
                                         >

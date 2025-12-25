@@ -70,7 +70,7 @@ const MenuItem = ({ item, language = 'en' }) => {
                     </h3>
                 </div>
 
-                <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '1rem' }}>
+                <div style={{ marginTop: 'auto', paddingTop: '1rem' }}>
                     <span style={{
                         fontSize: '1.1rem',
                         fontWeight: '800',
@@ -78,23 +78,6 @@ const MenuItem = ({ item, language = 'en' }) => {
                     }}>
                         {item.price} ETB
                     </span>
-
-                    <button
-                        onClick={handleWhatsAppOrder}
-                        className="btn"
-                        style={{
-                            width: 'auto',
-                            padding: '0.5rem 1rem',
-                            fontSize: '0.9rem',
-                            display: 'flex',
-                            gap: '0.5rem',
-                            background: 'var(--primary)',
-                            borderRadius: '20px'
-                        }}
-                    >
-                        <MessageCircle size={16} />
-                        Order
-                    </button>
                 </div>
             </div>
         </div>
