@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { databases, DATABASE_ID, COLLECTION_ITEMS_ID, COLLECTION_CATEGORIES_ID, isAppwriteConfigured } from '../lib/appwrite';
-import { ID, Query } from 'appwrite';
+import { supabase, TABLES, isSupabaseConfigured } from '../lib/supabase';
 import Navbar from '../components/Navbar';
 import MenuForm from '../components/MenuForm';
 import { Edit, Trash2, Plus, Eye, EyeOff, ArrowLeft } from 'lucide-react';
@@ -17,9 +16,10 @@ const AdminDashboard = () => {
     const [isManagingCategories, setIsManagingCategories] = useState(false);
 
     useEffect(() => {
-        if (isAppwriteConfigured) {
+        if (isSupabaseConfigured) {
             fetchAll();
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const fetchAll = async () => {
@@ -30,11 +30,13 @@ const AdminDashboard = () => {
 
     const fetchCategories = async () => {
         try {
-            const res = await databases.listDocuments(DATABASE_ID, COLLECTION_CATEGORIES_ID, [
-                Query.orderAsc('display_order'),
-                Query.limit(100)
-            ]);
-            setCategories(res.documents);
+            const { data, error } = await supabase
+                .from(TABLES.CATEGORIES)
+                .select('*')
+                .order('display_order', { ascending: true });
+
+            if (error) throw error;
+            setCategories(data || []);
         } catch (error) {
             console.error('Error fetching categories:', error);
         }
@@ -43,11 +45,16 @@ const AdminDashboard = () => {
     const handleAddCategory = async () => {
         if (!newCategoryName) return;
         try {
-            await databases.createDocument(DATABASE_ID, COLLECTION_CATEGORIES_ID, ID.unique(), {
-                name: newCategoryName,
-                image_url: newCategoryImage || '',
-                display_order: categories.length + 1
-            });
+            const { error } = await supabase
+                .from(TABLES.CATEGORIES)
+                .insert([{
+                    name: newCategoryName,
+                    image_url: newCategoryImage || '',
+                    display_order: categories.length + 1
+                }]);
+
+            if (error) throw error;
+
             setNewCategoryName('');
             setNewCategoryImage('');
             fetchCategories();
@@ -64,7 +71,12 @@ const AdminDashboard = () => {
         }
 
         try {
-            await databases.deleteDocument(DATABASE_ID, COLLECTION_CATEGORIES_ID, id);
+            const { error } = await supabase
+                .from(TABLES.CATEGORIES)
+                .delete()
+                .eq('id', id);
+
+            if (error) throw error;
             fetchCategories();
         } catch (error) {
             alert(error.message);
@@ -73,11 +85,13 @@ const AdminDashboard = () => {
 
     const fetchMenuItems = async () => {
         try {
-            const res = await databases.listDocuments(DATABASE_ID, COLLECTION_ITEMS_ID, [
-                Query.orderDesc('$createdAt'),
-                Query.limit(100)
-            ]);
-            setMenuItems(res.documents);
+            const { data, error } = await supabase
+                .from(TABLES.MENU_ITEMS)
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (error) throw error;
+            setMenuItems(data || []);
         } catch (error) {
             console.error('Error fetching menu:', error);
             alert('Error loading menu items');
@@ -90,10 +104,19 @@ const AdminDashboard = () => {
         try {
             if (itemToEdit) {
                 // Update
-                await databases.updateDocument(DATABASE_ID, COLLECTION_ITEMS_ID, itemToEdit.$id, itemData);
+                const { error } = await supabase
+                    .from(TABLES.MENU_ITEMS)
+                    .update(itemData)
+                    .eq('id', itemToEdit.id);
+
+                if (error) throw error;
             } else {
                 // Create
-                await databases.createDocument(DATABASE_ID, COLLECTION_ITEMS_ID, ID.unique(), itemData);
+                const { error } = await supabase
+                    .from(TABLES.MENU_ITEMS)
+                    .insert([itemData]);
+
+                if (error) throw error;
             }
 
             setIsEditing(false);
@@ -109,7 +132,12 @@ const AdminDashboard = () => {
         console.log('Deleting item with ID:', id);
 
         try {
-            await databases.deleteDocument(DATABASE_ID, COLLECTION_ITEMS_ID, id);
+            const { error } = await supabase
+                .from(TABLES.MENU_ITEMS)
+                .delete()
+                .eq('id', id);
+
+            if (error) throw error;
             console.log('Delete successful!');
             await fetchMenuItems();
         } catch (error) {
@@ -120,9 +148,12 @@ const AdminDashboard = () => {
 
     const toggleAvailability = async (id, currentStatus) => {
         try {
-            await databases.updateDocument(DATABASE_ID, COLLECTION_ITEMS_ID, id, {
-                is_available: !currentStatus
-            });
+            const { error } = await supabase
+                .from(TABLES.MENU_ITEMS)
+                .update({ is_available: !currentStatus })
+                .eq('id', id);
+
+            if (error) throw error;
             fetchMenuItems();
         } catch (error) {
             console.error('Error updating status:', error);
@@ -176,7 +207,7 @@ const AdminDashboard = () => {
                     </div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                         {categories.map(cat => (
-                            <div key={cat.$id} style={{
+                            <div key={cat.id} style={{
                                 background: 'var(--secondary)',
                                 padding: '0.5rem 1rem',
                                 borderRadius: '20px',
@@ -187,7 +218,7 @@ const AdminDashboard = () => {
                             }}>
                                 <span>{cat.name}</span>
                                 <button
-                                    onClick={() => handleDeleteCategory(cat.$id, cat.name)}
+                                    onClick={() => handleDeleteCategory(cat.id, cat.name)}
                                     style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', padding: 0 }}
                                 >
                                     <Trash2 size={14} />
@@ -219,7 +250,7 @@ const AdminDashboard = () => {
                     </thead>
                     <tbody>
                         {menuItems.map(item => (
-                            <tr key={item.$id} style={{ borderBottom: '1px solid #e0e0e0' }}>
+                            <tr key={item.id} style={{ borderBottom: '1px solid #e0e0e0' }}>
                                 <td data-label="Name" style={{ padding: '1rem' }}>
                                     <div style={{ fontWeight: 'bold' }}>{item.name_en}</div>
                                     <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>{item.name_local}</div>
@@ -228,7 +259,7 @@ const AdminDashboard = () => {
                                 <td data-label="Price" style={{ padding: '1rem' }}>{item.price} ETB</td>
                                 <td data-label="Status" style={{ padding: '1rem' }}>
                                     <button
-                                        onClick={() => toggleAvailability(item.$id, item.is_available)}
+                                        onClick={() => toggleAvailability(item.id, item.is_available)}
                                         style={{
                                             background: 'none',
                                             border: 'none',
@@ -253,7 +284,7 @@ const AdminDashboard = () => {
                                             <Edit size={16} />
                                         </button>
                                         <button
-                                            onClick={() => handleDelete(item.$id)}
+                                            onClick={() => handleDelete(item.id)}
                                             className="btn btn-danger"
                                             style={{ padding: '0.5rem', width: 'auto' }}
                                         >

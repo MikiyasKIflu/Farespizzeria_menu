@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
-import { account, isAppwriteConfigured } from '../lib/appwrite';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
 const AuthContext = createContext({});
 
@@ -10,19 +10,26 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        if (!isAppwriteConfigured) {
+        if (!isSupabaseConfigured) {
             setLoading(false);
             return;
         }
 
         // Check active session
         checkUser();
+
+        // Listen for auth changes
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            setUser(session?.user ?? null);
+        });
+
+        return () => subscription.unsubscribe();
     }, []);
 
     const checkUser = async () => {
         try {
-            const session = await account.get();
-            setUser(session);
+            const { data: { session } } = await supabase.auth.getSession();
+            setUser(session?.user ?? null);
         } catch (error) {
             setUser(null);
         } finally {
@@ -33,16 +40,20 @@ export const AuthProvider = ({ children }) => {
     const value = {
         signIn: async ({ email, password }) => {
             try {
-                await account.createEmailPasswordSession(email, password);
-                await checkUser();
-                return { data: { user: await account.get() }, error: null };
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email,
+                    password,
+                });
+                if (error) throw error;
+                return { data, error: null };
             } catch (error) {
                 return { data: { user: null }, error };
             }
         },
         signOut: async () => {
             try {
-                await account.deleteSession('current');
+                const { error } = await supabase.auth.signOut();
+                if (error) throw error;
                 setUser(null);
                 return { error: null };
             } catch (error) {

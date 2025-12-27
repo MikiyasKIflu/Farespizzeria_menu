@@ -4,7 +4,7 @@ Follow these steps to deploy your menu online so customers can access it.
 
 ## Prerequisites
 - A GitHub account (free)
-- Your Appwrite credentials ready
+- Your Supabase credentials ready
 
 ## Step 1: Push Code to GitHub
 
@@ -37,22 +37,20 @@ Follow these steps to deploy your menu online so customers can access it.
 
 ## Step 3: Add Environment Variables
 
-**CRITICAL**: Before clicking Deploy, add your Appwrite credentials:
+**CRITICAL**: Before clicking Deploy, add your Supabase credentials:
 
 1. In the deployment settings, find **Environment Variables**
 2. Add these variables (one by one):
 
    ```
-   VITE_APPWRITE_ENDPOINT=https://fra.cloud.appwrite.io/v1
-   VITE_APPWRITE_PROJECT_ID=694cca3a00364303b5fb
-   VITE_APPWRITE_DATABASE_ID=YOUR_DATABASE_ID
-   VITE_APPWRITE_COLLECTION_ITEMS_ID=YOUR_ITEMS_COLLECTION_ID
-   VITE_APPWRITE_COLLECTION_CATEGORIES_ID=YOUR_CATEGORIES_COLLECTION_ID
+   VITE_SUPABASE_URL=your_supabase_project_url
+   VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
    ```
 
-3. Get the IDs from your Appwrite Console:
-   - Database ID: Databases → Click your database → Copy the ID from the URL
-   - Collection IDs: Click each collection → Copy ID from the URL
+3. **Where to find them**:
+   - Go to your Supabase Project Dashboard
+   - Click **Settings** (gear icon) -> **API**
+   - Copy the **Project URL** and **anon public** key
 
 ## Step 4: Deploy!
 
@@ -70,13 +68,14 @@ Your menu is now live! You can:
 ## Admin Access
 
 - Public menu: `https://your-url.vercel.app/`
-- Admin panel: `https://your-url.vercel.app/login`
+- Admin panel: `https://your-url.vercel.app/admin` (Note: requires login)
 
 ## Troubleshooting
 
 **If the menu is blank after deployment:**
 - Check that all environment variables are set correctly in Vercel
-- Make sure your Appwrite collections have the correct permissions (Read for "Any")
+- Check the browser console (F12) for connection errors
+- Verify your Supabase storage policies (RLS) allowing public access to menu items
 
 **To update your menu later:**
 - Just push changes to GitHub: `git add .`, `git commit -m "Update menu"`, `git push`

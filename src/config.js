@@ -1,12 +1,11 @@
 export const cafeConfig = {
     name: 'Fares Pizzeria',
     slogan: 'Daily Fresh',
-    logoPath: '/logo.jpg', // Updated logo path
+    logoPath: '/logo.jpg',
     primaryColor: 'orange',
     accentColor: 'slight black',
     whatsappNumber: '+251', // Replace with actual café number
-    // Appwrite details are pulled from environment variables
-    appwriteEndpoint: import.meta.env.VITE_APPWRITE_ENDPOINT,
-    appwriteProjectId: import.meta.env.VITE_APPWRITE_PROJECT_ID,
-    appwriteDatabaseId: import.meta.env.VITE_APPWRITE_DATABASE_ID,
+    // Supabase details are pulled from environment variables
+    supabaseUrl: import.meta.env.VITE_SUPABASE_URL,
+    supabaseAnonKey: import.meta.env.VITE_SUPABASE_ANON_KEY,
 };

@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { databases, DATABASE_ID, COLLECTION_ITEMS_ID, COLLECTION_CATEGORIES_ID, isAppwriteConfigured } from '../lib/appwrite';
-import { Query } from 'appwrite';
+import { supabase, TABLES, isSupabaseConfigured } from '../lib/supabase';
 import MenuItem from '../components/MenuItem';
 import Navbar from '../components/Navbar';
 import Sidebar from '../components/Sidebar';
@@ -9,7 +8,7 @@ import AOS from 'aos';
 import { Search, Grid } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { translations } from '../utils/translations';
-import { cafeConfig } from '../config';
+
 
 const PublicMenu = () => {
     const [menuItems, setMenuItems] = useState([]);
@@ -30,7 +29,7 @@ const PublicMenu = () => {
             offset: 50
         });
 
-        if (!isAppwriteConfigured) {
+        if (!isSupabaseConfigured) {
             setLoading(false);
             return;
         }
@@ -38,22 +37,25 @@ const PublicMenu = () => {
     }, []);
 
     const fetchData = async () => {
-        if (!isAppwriteConfigured) return;
+        if (!isSupabaseConfigured) return;
         try {
             const [itemsRes, catsRes] = await Promise.all([
-                databases.listDocuments(DATABASE_ID, COLLECTION_ITEMS_ID, [
-                    Query.orderAsc('category'),
-                    Query.orderAsc('name_en'),
-                    Query.limit(100)
-                ]),
-                databases.listDocuments(DATABASE_ID, COLLECTION_CATEGORIES_ID, [
-                    Query.orderAsc('display_order'),
-                    Query.limit(100)
-                ])
+                supabase
+                    .from(TABLES.MENU_ITEMS)
+                    .select('*')
+                    .order('category', { ascending: true })
+                    .order('name_en', { ascending: true }),
+                supabase
+                    .from(TABLES.CATEGORIES)
+                    .select('*')
+                    .order('display_order', { ascending: true })
             ]);
 
-            setMenuItems(itemsRes.documents);
-            setCategoriesList(catsRes.documents);
+            if (itemsRes.error) throw itemsRes.error;
+            if (catsRes.error) throw catsRes.error;
+
+            setMenuItems(itemsRes.data || []);
+            setCategoriesList(catsRes.data || []);
         } catch (error) {
             console.error('Error fetching data:', error);
         } finally {
@@ -255,12 +257,12 @@ const PublicMenu = () => {
                 </div>
             </div>
 
-            {(!isAppwriteConfigured) ? (
+            {(!isSupabaseConfigured) ? (
                 <div style={{ textAlign: 'center', padding: '4rem', color: '#e74c3c' }}>
                     <h2 style={{ marginBottom: '1rem' }}>Configuration Error</h2>
-                    <p>Appwrite connection is missing.</p>
+                    <p>Supabase connection is missing.</p>
                     <p style={{ fontSize: '0.9rem', marginTop: '1rem', color: 'var(--text-muted)' }}>
-                        Please create a <code>.env</code> file with your <code>VITE_APPWRITE_ENDPOINT</code>, <code>VITE_APPWRITE_PROJECT_ID</code>, and <code>VITE_APPWRITE_DATABASE_ID</code>.
+                        Please create a <code>.env</code> file with your <code>VITE_SUPABASE_URL</code> and <code>VITE_SUPABASE_ANON_KEY</code>.
                     </p>
                 </div>
             ) : loading ? (
@@ -294,7 +296,7 @@ const PublicMenu = () => {
                                     justifyContent: 'center'
                                 }}>
                                     {data.items.map((item, i) => (
-                                        <div key={item.$id} data-aos="fade-up" data-aos-delay={i * 50}>
+                                        <div key={item.id} data-aos="fade-up" data-aos-delay={i * 50}>
                                             <MenuItem item={item} language={language} />
                                         </div>
                                     ))}

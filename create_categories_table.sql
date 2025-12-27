@@ -3,7 +3,8 @@ create table if not exists categories (
   id uuid default gen_random_uuid() primary key,
   created_at timestamptz default now(),
   name text not null unique,
-  display_order int default 0
+  display_order int default 0,
+  image_url text
 );
 
 -- Enable RLS

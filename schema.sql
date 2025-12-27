@@ -1,5 +1,5 @@
 -- Create a table for menu items
-create table menu_items (
+create table if not exists menu_items (
   id uuid default gen_random_uuid() primary key,
   created_at timestamptz default now(),
   name_en text not null,
@@ -7,7 +7,7 @@ create table menu_items (
   name_om text,
   name_so text,
   price numeric not null,
-  category text not null, -- 'Breakfast', 'Lunch & Dinner', 'Pasta & Rice'
+  category text not null,
   is_available boolean default true,
   image_url text
 );

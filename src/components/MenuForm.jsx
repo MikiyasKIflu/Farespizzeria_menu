@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { databases, DATABASE_ID, COLLECTION_CATEGORIES_ID } from '../lib/appwrite';
-import { Query } from 'appwrite';
+import { supabase, TABLES } from '../lib/supabase';
 
 const MenuForm = ({ itemToEdit, onSave, onCancel }) => {
     const [categories, setCategories] = useState([]);
@@ -18,11 +17,14 @@ const MenuForm = ({ itemToEdit, onSave, onCancel }) => {
     useEffect(() => {
         const fetchCategories = async () => {
             try {
-                const res = await databases.listDocuments(DATABASE_ID, COLLECTION_CATEGORIES_ID, [
-                    Query.orderAsc('display_order'),
-                    Query.limit(100)
-                ]);
-                const cats = res.documents.map(c => c.name);
+                const { data, error } = await supabase
+                    .from(TABLES.CATEGORIES)
+                    .select('name')
+                    .order('display_order', { ascending: true });
+
+                if (error) throw error;
+
+                const cats = data.map(c => c.name);
                 setCategories(cats);
                 if (!itemToEdit && cats.length > 0) {
                     setFormData(prev => ({ ...prev, category: cats[0] }));
@@ -56,7 +58,7 @@ const MenuForm = ({ itemToEdit, onSave, onCancel }) => {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        // Ensure price is a number for Appwrite
+        // Ensure price is a number for Supabase
         const submissionData = {
             ...formData,
             price: parseFloat(formData.price)

@@ -2,27 +2,27 @@
 
 To add images to your categories, follow these steps:
 
-## Step 1: Update Appwrite Collection
-1. Go to [Appwrite Console](https://cloud.appwrite.io/)
-2. Navigate to: **Databases** → **[Your Database]** → **categories**
-3. Click **Attributes** tab
-4. Click **Add Attribute**
-5. Select **String**
-6. Attribute Key: `image_url`
-7. Size: `2000`
-8. Required: **No** (uncheck)
-9. Click **Create**
+## Step 1: Verify Supabase Schema
+The `image_url` column has already been added to the `categories` table in the schema. If you haven't run the SQL yet:
+
+1. Go to [Supabase Dashboard](https://supabase.com/dashboard)
+2. Navigate to your project
+3. Click **SQL Editor** in the left sidebar
+4. Run the `create_categories_table.sql` file to create the categories table with image support
 
 ## Step 2: Add Images to Your Categories
-After I update the code, you'll be able to add image URLs when creating categories in the admin panel.
+You can add image URLs when creating categories in the admin panel, or update existing categories:
 
-For now, you can add images directly in Appwrite:
-1. Go to **categories** → **Documents**
-2. Click on a category
-3. Add an `image_url` field with a link to an image (e.g., from Unsplash or your own images)
+1. Go to your admin dashboard (`/admin`)
+2. Click **Manage Categories**
+3. When adding a new category, enter the image URL in the "Image URL" field
+4. For existing categories, you can update them directly in Supabase:
+   - Go to **Table Editor** → **categories**
+   - Click on a category row
+   - Add or update the `image_url` field with a link to an image
 
 ## Recommended Image Sources
 - **Unsplash**: https://unsplash.com/ (free high-quality images)
 - **Your own images**: Upload to your server or use image hosting
 
-Let me know once you've added the `image_url` attribute in Appwrite!
+The images will automatically display in the category filter on the public menu page.
