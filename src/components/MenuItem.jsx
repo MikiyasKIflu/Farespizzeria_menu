@@ -7,8 +7,8 @@ import { MessageCircle } from 'lucide-react';
 const MenuItem = ({ item, language = 'en' }) => {
     if (!item.is_available) return null;
 
-    // Temporarily force local image mapper (which returns logo) as requested
-    const imageSrc = getCategoryImage(item.category, item.name_en || item.name_local);
+    // Use Supabase image if available, otherwise fallback to local image mapper
+    const imageSrc = item.image_url || getCategoryImage(item.category, item.name_en || item.name_local);
 
 
     const displayName = language === 'en'

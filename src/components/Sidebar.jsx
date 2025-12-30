@@ -10,7 +10,8 @@ import { translations } from '../utils/translations';
 import { cafeConfig } from '../config';
 
 const Sidebar = ({ isOpen, onClose, language = 'en' }) => {
-    const t = translations[language];
+    // Ensure we have a valid translation object, fallback to 'en' if language is invalid
+    const t = translations[language] || translations.en || {};
 
     return (
         <>

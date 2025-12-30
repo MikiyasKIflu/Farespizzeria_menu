@@ -19,7 +19,8 @@ const PublicMenu = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const { language, setLanguage } = useLanguage();
 
-    const t = translations[language];
+    // Ensure we have a valid translation object, fallback to 'en' if language is invalid
+    const t = translations[language] || translations.en || {};
 
     useEffect(() => {
         // Initialize AOS
@@ -54,27 +55,37 @@ const PublicMenu = () => {
             if (itemsRes.error) throw itemsRes.error;
             if (catsRes.error) throw catsRes.error;
 
-            setMenuItems(itemsRes.data || []);
-            setCategoriesList(catsRes.data || []);
+            setMenuItems(Array.isArray(itemsRes.data) ? itemsRes.data : []);
+            setCategoriesList(Array.isArray(catsRes.data) ? catsRes.data : []);
         } catch (error) {
             console.error('Error fetching data:', error);
+            setMenuItems([]);
+            setCategoriesList([]);
         } finally {
             setLoading(false);
         }
     };
 
     const categories = [
-        { id: 'All', label: t.all },
-        ...categoriesList.map(c => ({
-            id: c.name,
-            label: t[c.name.toLowerCase().replace(/ & /g, '_').replace(/ /g, '_')] || c.name
-        }))
+        { id: 'All', label: t.all || 'All' },
+        ...(Array.isArray(categoriesList) ? categoriesList : [])
+            .filter(c => c && c.name) // Filter out categories with null/undefined names
+            .map(c => {
+                const categoryKey = c.name.toLowerCase().replace(/ & /g, '_').replace(/ /g, '_');
+                return {
+                    id: c.name,
+                    label: t[categoryKey] || c.name
+                };
+            })
     ];
 
-    const filteredItems = menuItems.filter(item => {
+    const filteredItems = (Array.isArray(menuItems) ? menuItems : []).filter(item => {
+        if (!item) return false;
         const matchesCategory = categoryFilter === 'All' || item.category === categoryFilter;
-        const matchesSearch = item.name_en.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (item.name_local && item.name_local.includes(searchTerm));
+        const matchesSearch = (item.name_en?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+            (item.name_local || '').includes(searchTerm) ||
+            (item.name_om?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+            (item.name_so?.toLowerCase() || '').includes(searchTerm.toLowerCase());
         return matchesCategory && matchesSearch;
     });
 
