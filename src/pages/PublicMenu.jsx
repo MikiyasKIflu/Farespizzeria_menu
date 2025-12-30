@@ -8,6 +8,7 @@ import AOS from 'aos';
 import { Search, Grid } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { translations } from '../utils/translations';
+import { cafeConfig } from '../config';
 
 
 const PublicMenu = () => {
@@ -70,12 +71,13 @@ const PublicMenu = () => {
     const categories = [
         { id: 'All', label: t.all || 'All' },
         ...(Array.isArray(categoriesList) ? categoriesList : [])
-            .filter(c => c && c.name) // Filter out categories with null/undefined names
+            .filter(c => c && (c.name_en || c.name_local || c.name)) // Handle old 'name' or new 'name_en'
             .map(c => {
-                const categoryKey = c.name.toLowerCase().replace(/ & /g, '_').replace(/ /g, '_');
+                const name = c.name_en || c.name_local || c.name;
+                const categoryKey = name.toLowerCase().replace(/ & /g, '_').replace(/ /g, '_');
                 return {
-                    id: c.name,
-                    label: t[categoryKey] || c.name
+                    id: name,
+                    label: t[categoryKey] || name
                 };
             })
     ];
