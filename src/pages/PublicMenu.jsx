@@ -71,13 +71,12 @@ const PublicMenu = () => {
     const categories = [
         { id: 'All', label: t.all || 'All' },
         ...(Array.isArray(categoriesList) ? categoriesList : [])
-            .filter(c => c && (c.name_en || c.name_local || c.name)) // Handle old 'name' or new 'name_en'
+            .filter(c => c && c.name) // Filter out categories with null/undefined names
             .map(c => {
-                const name = c.name_en || c.name_local || c.name;
-                const categoryKey = name.toLowerCase().replace(/ & /g, '_').replace(/ /g, '_');
+                const categoryKey = c.name.toLowerCase().replace(/ & /g, '_').replace(/ /g, '_');
                 return {
-                    id: name,
-                    label: t[categoryKey] || name
+                    id: c.name,
+                    label: t[categoryKey] || c.name
                 };
             })
     ];

@@ -19,12 +19,12 @@ const MenuForm = ({ itemToEdit, onSave, onCancel }) => {
             try {
                 const { data, error } = await supabase
                     .from(TABLES.CATEGORIES)
-                    .select('name_en, name_local')
+                    .select('name')
                     .order('display_order', { ascending: true });
 
                 if (error) throw error;
 
-                const cats = data.map(c => c.name_en || c.name_local);
+                const cats = data.map(c => c.name);
                 setCategories(cats);
                 if (!itemToEdit && cats.length > 0) {
                     setFormData(prev => ({ ...prev, category: cats[0] }));
