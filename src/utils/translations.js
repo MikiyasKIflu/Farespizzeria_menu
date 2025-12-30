@@ -21,7 +21,10 @@ export const translations = {
         order_whatsapp: "Order on WhatsApp",
         order_message: "Hi! I would like to order: ",
         pizza: "Pizza",
-        juice: "Juice"
+        juice: "Juice",
+        burger_and_pizza: "Burger and Pizza",
+        fish_and_salad: "Fish and Salad",
+        soft_drinks: "Soft Drinks"
     },
     am: {
         all: "ሁሉም",
@@ -46,7 +49,10 @@ export const translations = {
         order_whatsapp: "በዋትስአፕ ይዘዙ",
         order_message: "ሰላም! ይህንን ማዘዝ እፈልጋለሁ: ",
         pizza: "ፒዛ",
-        juice: "ጭማቂ"
+        juice: "ጭማቂ",
+        burger_and_pizza: "በርገር እና ፒዛ",
+        fish_and_salad: "አሳ እና ሰላጣ",
+        soft_drinks: "ለስላሳ መጠጦች"
     },
     om: {
         all: "Hunda",
@@ -71,7 +77,10 @@ export const translations = {
         order_whatsapp: "WhatsApp'n ajaji",
         order_message: "Akkam! Kanan ajajuu barbaada: ",
         pizza: "Pizaa",
-        juice: "Juusii"
+        juice: "Juusii",
+        burger_and_pizza: "Baragariifi Pizaa",
+        fish_and_salad: "Qurxummii fi Salaaxaa",
+        soft_drinks: "Dhugaatii Lallaabaa"
     },
     so: {
         all: "Dhammaan",
@@ -96,6 +105,9 @@ export const translations = {
         order_whatsapp: "WhatsApp kaga dalbo",
         order_message: "Haye! Waxaan rabaa inaan dalbado: ",
         pizza: "Pizza",
-        juice: "Juus"
+        juice: "Juus",
+        burger_and_pizza: "Burger iyo Pizza",
+        fish_and_salad: "Kalluun iyo Salad",
+        soft_drinks: "Cabbitaannada Fudud"
     }
 };

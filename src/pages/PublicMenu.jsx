@@ -162,9 +162,9 @@ const PublicMenu = () => {
                 display: 'flex',
                 gap: '0.5rem',
                 marginBottom: '1.5rem',
-                overflowX: 'auto',
+                flexWrap: 'wrap',
                 paddingBottom: '0.5rem'
-            }} className="hide-scrollbar">
+            }}>
                 {[
                     { code: 'en', label: 'English' },
                     { code: 'am', label: 'Amharic' },
