@@ -50,7 +50,7 @@ const PublicMenu = () => {
                     .order('name_en', { ascending: true }),
                 supabase
                     .from(TABLES.CATEGORIES)
-                    .select('*')
+                    .select('*, name_local')
                     .order('display_order', { ascending: true })
             ]);
 
@@ -74,9 +74,14 @@ const PublicMenu = () => {
             .filter(c => c && c.name) // Filter out categories with null/undefined names
             .map(c => {
                 const categoryKey = c.name.toLowerCase().replace(/ & /g, '_').replace(/ /g, '_');
+                // Use name_local if available and language is not English, otherwise use translation or fallback to English name
+                const translatedLabel = (language !== 'en' && c.name_local)
+                    ? c.name_local
+                    : (t[categoryKey] || c.name);
+
                 return {
                     id: c.name,
-                    label: t[categoryKey] || c.name
+                    label: translatedLabel
                 };
             })
     ];

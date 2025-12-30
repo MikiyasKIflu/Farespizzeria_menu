@@ -12,6 +12,7 @@ const AdminDashboard = () => {
     const [isEditing, setIsEditing] = useState(false);
     const [itemToEdit, setItemToEdit] = useState(null);
     const [newCategoryName, setNewCategoryName] = useState('');
+    const [newCategoryLocalName, setNewCategoryLocalName] = useState('');
     const [newCategoryImage, setNewCategoryImage] = useState('');
     const [isManagingCategories, setIsManagingCategories] = useState(false);
 
@@ -49,6 +50,7 @@ const AdminDashboard = () => {
                 .from(TABLES.CATEGORIES)
                 .insert([{
                     name: newCategoryName,
+                    name_local: newCategoryLocalName || null,
                     image_url: newCategoryImage || '',
                     display_order: categories.length + 1
                 }]);
@@ -56,6 +58,7 @@ const AdminDashboard = () => {
             if (error) throw error;
 
             setNewCategoryName('');
+            setNewCategoryLocalName('');
             setNewCategoryImage('');
             fetchCategories();
         } catch (error) {
@@ -199,6 +202,12 @@ const AdminDashboard = () => {
                         />
                         <input
                             className="form-input"
+                            placeholder="Local Name (Amharic/Oromo)..."
+                            value={newCategoryLocalName}
+                            onChange={(e) => setNewCategoryLocalName(e.target.value)}
+                        />
+                        <input
+                            className="form-input"
                             placeholder="Image URL (optional)..."
                             value={newCategoryImage}
                             onChange={(e) => setNewCategoryImage(e.target.value)}
@@ -216,7 +225,7 @@ const AdminDashboard = () => {
                                 alignItems: 'center',
                                 gap: '0.5rem'
                             }}>
-                                <span>{cat.name}</span>
+                                <span>{cat.name} {cat.name_local ? `(${cat.name_local})` : ''}</span>
                                 <button
                                     onClick={() => handleDeleteCategory(cat.id, cat.name)}
                                     style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', padding: 0 }}
