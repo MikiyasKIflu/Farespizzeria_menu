@@ -17,6 +17,7 @@ const PublicMenu = () => {
     const [categoryFilter, setCategoryFilter] = useState('All');
     const [searchTerm, setSearchTerm] = useState('');
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [feedbackMessage, setFeedbackMessage] = useState('');
     const { language, setLanguage } = useLanguage();
 
     // Ensure we have a valid translation object, fallback to 'en' if language is invalid
@@ -160,7 +161,9 @@ const PublicMenu = () => {
             }} className="hide-scrollbar">
                 {[
                     { code: 'en', label: 'English' },
-                    { code: 'am', label: 'Amharic' }
+                    { code: 'am', label: 'Amharic' },
+                    { code: 'om', label: 'Oromo' },
+                    { code: 'so', label: 'Somali' }
                 ].map((lang) => (
                     <button
                         key={lang.code}
@@ -322,35 +325,67 @@ const PublicMenu = () => {
             <div id="feedback-section" className="feedback-section" style={{
                 marginTop: '4rem',
                 backgroundColor: 'var(--primary)',
-                padding: '5rem 2rem',
+                padding: '4rem 2rem',
                 borderRadius: 'var(--border-radius)',
                 textAlign: 'center',
                 color: 'white',
                 boxShadow: '0 20px 40px rgba(47, 133, 90, 0.2)'
             }} data-aos="fade-up">
-                <h2 style={{ color: 'white', marginBottom: '1.5rem', fontSize: '2.5rem' }}>{t.feedback}</h2>
-                <p style={{ color: 'rgba(255,255,255,0.9)', marginBottom: '2.5rem', fontSize: '1.2rem' }}>We value your opinion! Tell us how we're doing.</p>
-                <button className="btn" style={{ background: 'white', color: 'var(--primary)', border: 'none', padding: '1rem 2.5rem' }} onClick={() => alert(t.feedback + ' ' + t.coming_soon)}>
-                    Submit Feedback
-                </button>
+                <h2 style={{ color: 'white', marginBottom: '1rem', fontSize: '2rem' }}>{t.feedback}</h2>
+                <p style={{ color: 'rgba(255,255,255,0.9)', marginBottom: '1.5rem' }}>We value your opinion! Tell us how we're doing.</p>
+                <div style={{ maxWidth: '500px', margin: '0 auto' }}>
+                    <textarea
+                        value={feedbackMessage}
+                        onChange={(e) => setFeedbackMessage(e.target.value)}
+                        placeholder="Write your feedback here..."
+                        style={{
+                            width: '100%',
+                            height: '100px',
+                            padding: '1rem',
+                            borderRadius: '10px',
+                            border: 'none',
+                            marginBottom: '1rem',
+                            fontSize: '1rem'
+                        }}
+                    />
+                    <button
+                        className="btn"
+                        style={{ background: 'white', color: 'var(--primary)', border: 'none', padding: '0.8rem 2rem', fontWeight: 'bold' }}
+                        onClick={() => {
+                            if (!feedbackMessage) return alert('Please enter your feedback first.');
+                            const msg = encodeURIComponent(`Feedback: ${feedbackMessage}`);
+                            window.open(`https://wa.me/${cafeConfig.whatsappNumber}?text=${msg}`, '_blank');
+                            setFeedbackMessage('');
+                        }}
+                    >
+                        Send Feedback
+                    </button>
+                </div>
             </div>
 
             {/* Review Section */}
             <div id="review-section" className="review-section" style={{
                 marginTop: '4rem',
                 backgroundColor: 'var(--accent)',
-                padding: '5rem 2rem',
+                padding: '4rem 2rem',
                 borderRadius: 'var(--border-radius)',
                 textAlign: 'center',
                 color: 'white',
                 boxShadow: '0 20px 40px rgba(212, 163, 115, 0.2)'
             }} data-aos="fade-up">
-                <h2 style={{ color: 'white', marginBottom: '1.5rem', fontSize: '2.5rem' }}>{t.review}</h2>
-                <p style={{ color: 'rgba(255,255,255,0.9)', marginBottom: '2.5rem', fontSize: '1.2rem' }}>Love our food? Leave us a review!</p>
-                <div style={{ display: 'flex', justifyContent: 'center', gap: '0.5rem', marginBottom: '2.5rem', fontSize: '2rem', color: '#f1c40f' }}>
+                <h2 style={{ color: 'white', marginBottom: '1rem', fontSize: '2rem' }}>{t.review}</h2>
+                <p style={{ color: 'rgba(255,255,255,0.9)', marginBottom: '1.5rem' }}>Love our food? Leave us a review!</p>
+                <div style={{ display: 'flex', justifyContent: 'center', gap: '0.5rem', marginBottom: '1.5rem', fontSize: '1.5rem', color: '#f1c40f' }}>
                     ★★★★★
                 </div>
-                <button className="btn" style={{ background: 'white', color: 'var(--accent)', border: 'none', padding: '1rem 2.5rem' }} onClick={() => alert(t.review + ' ' + t.coming_soon)}>
+                <button
+                    className="btn"
+                    style={{ background: 'white', color: 'var(--accent)', border: 'none', padding: '0.8rem 2rem', fontWeight: 'bold' }}
+                    onClick={() => {
+                        const msg = encodeURIComponent("I'd like to leave a review: 5/5 stars! 🌟");
+                        window.open(`https://wa.me/${cafeConfig.whatsappNumber}?text=${msg}`, '_blank');
+                    }}
+                >
                     Write a Review
                 </button>
             </div>
