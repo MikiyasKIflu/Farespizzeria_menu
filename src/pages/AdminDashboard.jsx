@@ -13,6 +13,8 @@ const AdminDashboard = () => {
     const [itemToEdit, setItemToEdit] = useState(null);
     const [newCategoryName, setNewCategoryName] = useState('');
     const [newCategoryLocalName, setNewCategoryLocalName] = useState('');
+    const [newCategoryOmName, setNewCategoryOmName] = useState('');
+    const [newCategorySoName, setNewCategorySoName] = useState('');
     const [newCategoryImage, setNewCategoryImage] = useState('');
     const [isManagingCategories, setIsManagingCategories] = useState(false);
 
@@ -51,6 +53,8 @@ const AdminDashboard = () => {
                 .insert([{
                     name: newCategoryName,
                     name_local: newCategoryLocalName || null,
+                    name_om: newCategoryOmName || null,
+                    name_so: newCategorySoName || null,
                     image_url: newCategoryImage || '',
                     display_order: categories.length + 1
                 }]);
@@ -59,6 +63,8 @@ const AdminDashboard = () => {
 
             setNewCategoryName('');
             setNewCategoryLocalName('');
+            setNewCategoryOmName('');
+            setNewCategorySoName('');
             setNewCategoryImage('');
             fetchCategories();
         } catch (error) {
@@ -202,10 +208,24 @@ const AdminDashboard = () => {
                         />
                         <input
                             className="form-input"
-                            placeholder="Local Name (Amharic/Oromo)..."
+                            placeholder="Amharic Name..."
                             value={newCategoryLocalName}
                             onChange={(e) => setNewCategoryLocalName(e.target.value)}
                         />
+                        <div style={{ display: 'flex', gap: '1rem' }}>
+                            <input
+                                className="form-input"
+                                placeholder="Oromo Name..."
+                                value={newCategoryOmName}
+                                onChange={(e) => setNewCategoryOmName(e.target.value)}
+                            />
+                            <input
+                                className="form-input"
+                                placeholder="Somali Name..."
+                                value={newCategorySoName}
+                                onChange={(e) => setNewCategorySoName(e.target.value)}
+                            />
+                        </div>
                         <input
                             className="form-input"
                             placeholder="Image URL (optional)..."
